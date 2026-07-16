@@ -1522,9 +1522,9 @@ void main() async {
 
 ```
 บันทึกผลการทดลอง:
-Sequential ใช้เวลา: _______ ms
-Parallel ใช้เวลา:   _______ ms
-ประหยัดเวลาได้:     _______ ms (_______ %)
+Sequential ใช้เวลา: 3622 ms
+Parallel ใช้เวลา:   1000 ms
+ประหยัดเวลาได้:     2622 ms ( 72.39 %)
 ```
 
 ---
@@ -1589,7 +1589,77 @@ void main() async {
 **บันทึกผลการทดลอง: บันทึกโค้ดคำสั่งที่ได้**
 ```dart
 // บันทึกโค้ดในส่วนนี้
+import 'dart:async';
 
+// ===========================
+// คำนวณภาษี (Future)
+// ===========================
+Future<double> calculateTax(double income) async {
+  await Future.delayed(Duration(milliseconds: 500));
+
+  if (income <= 150000) {
+    return 0;
+  } else if (income <= 300000) {
+    return income * 0.05;
+  } else if (income <= 500000) {
+    return income * 0.10;
+  } else {
+    return income * 0.20;
+  }
+}
+
+// ===========================
+// Stream Chat Message
+// ===========================
+Stream<String> simulateChatMessage() async* {
+  List<String> messages = [
+    "สวัสดีครับ ยินดีที่ได้รู้จัก!",
+    "วันนี้อากาศดีจังเลยนะ",
+    "คุณกำลังศึกษาภาษา Dart อยู่หรือเปล่า?",
+    "มันเขียนสนุกและเข้าใจง่ายมากเลย",
+    "ขอให้มีความสุขกับการเขียนโค้ดนะ บ๊ายบาย 👋"
+  ];
+
+  for (String message in messages) {
+    await Future.delayed(Duration(seconds: 1));
+    yield message;
+  }
+}
+
+void main() async {
+  print("=== [1] ทดสอบคำนวณภาษีแบบขนาน (Future.wait) ===");
+
+  var stopwatch = Stopwatch()..start();
+
+  List<double> userIncomes = [250000, 450000, 750000];
+
+  List<double> taxes = await Future.wait(
+    userIncomes.map((income) => calculateTax(income)),
+  );
+
+  stopwatch.stop();
+
+  double totalTax = 0;
+
+  for (int i = 0; i < userIncomes.length; i++) {
+    totalTax += taxes[i];
+
+    print(
+        "ผู้ใช้คนที่ ${i + 1} | รายได้: ${userIncomes[i].toStringAsFixed(2)} บาท -> ภาษี: ${taxes[i].toStringAsFixed(2)} บาท");
+  }
+
+  print("--------------------------------------------------");
+  print("💰 ผลรวมภาษีทั้งหมด: ${totalTax.toStringAsFixed(2)} บาท");
+  print("⏱️ เวลาที่ใช้: ${stopwatch.elapsedMilliseconds} ms");
+
+  print("\n=== [2] ทดสอบรับข้อความ Chat (Stream) ===");
+
+  await for (String msg in simulateChatMessage()) {
+    print("[Chat Bot] $msg");
+  }
+
+  print("\nสิ้นสุดการเชื่อมต่อแชท");
+}
 
 ```
 ---
@@ -1599,28 +1669,30 @@ void main() async {
 
 **ข้อ 1** อธิบายความแตกต่างระหว่าง `final` และ `const` พร้อมยกตัวอย่างกรณีที่ใช้แต่ละแบบ
 ```text
-
-
+final: กำหนดค่าได้ครั้งเดียวตอนรันโปรแกรม เช่น วันที่ปัจจุบัน
+const: ค่าคงที่ตั้งแต่คอมไพล์ เช่น PI หรือสีที่ไม่เปลี่ยน
 ```
 **ข้อ 2** Named Parameters และ Positional Parameters ต่างกันอย่างไร? ควรเลือกใช้แบบไหนเมื่อไหร่?
 ```text
-
-
+Named Parameters ระบุชื่อพารามิเตอร์ อ่านง่าย เหมาะกับฟังก์ชันที่มีหลายค่า
+Positional Parameters ส่งค่าตามลำดับ เหมาะกับฟังก์ชันที่มีพารามิเตอร์ไม่กี่ตัว
 ```
 **ข้อ 3** Abstract Class และ Mixin มีจุดประสงค์ต่างกันอย่างไร? ยกตัวอย่างสถานการณ์ที่เหมาะกับแต่ละแบบ
 ```text
-
-
+Abstract Class ใช้กำหนดโครงสร้างให้คลาสลูก เช่น Animal → Dog
+Mixin ใช้เพิ่มความสามารถให้หลายคลาส เช่น เพิ่มการ Log หรือ Fly ได้
 ```
 **ข้อ 4** จากการทดลอง 4.1 Sequential ใช้เวลาประมาณกี่ ms และ Parallel ใช้เวลาเท่าไหร่? อธิบายเหตุผลที่ Parallel เร็วกว่า และบอกกรณีที่ต้องใช้ Sequential แทน
 ```text
+Sequential ≈ 3000 ms
+Parallel ≈ 1000 ms
 
-
+Parallel เร็วกว่าเพราะทำงานหลายงานพร้อมกัน ส่วน Sequential เหมาะกับงานที่ต้องทำตามลำดับ เช่น ต้องรอผลจากงานก่อนหน้า
 ```
 **ข้อ 5** Future และ Stream ต่างกันอย่างไร? ยกตัวอย่างสถานการณ์ที่เหมาะกับแต่ละแบบจากการพัฒนา Mobile App จริงๆ
 ```text
-
-
+Future ใช้รับผลลัพธ์ครั้งเดียว เช่น โหลดข้อมูลจาก API
+Stream ใช้รับข้อมูลต่อเนื่องหลายครั้ง เช่น แชท การแจ้งเตือน หรือ GPS
 ```
 ---
 
