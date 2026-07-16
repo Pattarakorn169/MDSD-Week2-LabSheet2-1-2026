@@ -639,6 +639,62 @@ void main() {
 **บันทึกผลการทดลอง: บันทึกโค้ดคำสั่งที่ได้**
 ```dart
 // บันทึกโค้ดในส่วนนี้
+// บันทึกโค้ดในส่วนนี้
+void main() {
+  List<Map<String, dynamic>> students = [
+    {"name": "สมชาย",  "gpa": 3.75, "year": 3, "faculty": "วิศวกรรม"},
+    {"name": "สมหญิง", "gpa": 2.50, "year": 1, "faculty": "วิทยาศาสตร์"},
+    {"name": "สมศักดิ์","gpa": 3.10, "year": 2, "faculty": "วิศวกรรม"},
+    {"name": "สมใจ",  "gpa": 1.80, "year": 4, "faculty": "บริหาร"},
+    {"name": "สมปอง", "gpa": 3.50, "year": 2, "faculty": "วิทยาศาสตร์"},
+    {"name": "สมศรี", "gpa": 2.90, "year": 3, "faculty": "บริหาร"},
+  ];
+
+  print("=== 1. ค้นหาผู้มี GPA สูงสุดตามคณะ ===");
+  String targetFaculty = "วิศวกรรม";
+  String topStudent = findTopStudentByFaculty(students, targetFaculty);
+  print("นักศึกษาที่ GPA สูงสุดในคณะ $targetFaculty คือ: $topStudent");
+
+  print("\n=== 2. จัดกลุ่มนักศึกษาตามคณะ ===");
+  Map<String, List<Map<String, dynamic>>> grouped = groupByFaculty(students);
+  grouped.forEach((faculty, list) {
+    var names = list.map((s) => s["name"]).toList();
+    print("คณะ $faculty: $names");
+  });
+
+  print("\n=== 3. นักศึกษาที่มี GPA สูงสุด 3 อันดับแรก ===");
+  // ใช้ cascade operator (..) เพื่อไม่ให้เรียงลำดับกระทบข้อมูลต้นฉบับ (หรือสไลด์สลับตำแหน่งใน list เดิม)
+  var sortedStudents = List<Map<String, dynamic>>.from(students);
+  sortedStudents.sort((a, b) => (b["gpa"] as double).compareTo(a["gpa"] as double));
+  
+  var topThree = sortedStudents.take(3).toList();
+  for (int i = 0; i < topThree.length; i++) {
+    print("${i + 1}. ${topThree[i]["name"]} (${topThree[i]["faculty"]}) GPA: ${topThree[i]["gpa"]}");
+  }
+}
+
+// 1. Function คืนชื่อนักศึกษาที่ GPA สูงสุดในคณะที่ระบุ
+String findTopStudentByFaculty(List<Map<String, dynamic>> students, String faculty) {
+  var facultyStudents = students.where((s) => s["faculty"] == faculty).toList();
+  if (facultyStudents.isEmpty) {
+    return "ไม่พบนักศึกษาในคณะนี้";
+  }
+  var top = facultyStudents.reduce((a, b) => (a["gpa"] as double) > (b["gpa"] as double) ? a : b);
+  return "${top["name"]} (${top["gpa"]})";
+}
+
+// 2. Function จัดกลุ่มนักศึกษาตามคณะ คืนค่าเป็น Map<String, List>
+Map<String, List<Map<String, dynamic>>> groupByFaculty(List<Map<String, dynamic>> students) {
+  Map<String, List<Map<String, dynamic>>> map = {};
+  for (var student in students) {
+    String faculty = student["faculty"];
+    if (!map.containsKey(faculty)) {
+      map[faculty] = [];
+    }
+    map[faculty]!.add(student);
+  }
+  return map;
+}
 
 
 ```
