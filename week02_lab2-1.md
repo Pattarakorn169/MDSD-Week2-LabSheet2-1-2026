@@ -1042,7 +1042,253 @@ void main() {
 **บันทึกผลการทดลอง: บันทึกโค้ดคำสั่งที่ได้**
 ```dart
 // บันทึกโค้ดในส่วนนี้
+// =================================================================
+// ส่วนที่ 1: CheckingAccount (บัญชีแบบถอนเกินบัญชีได้)
+// =================================================================
 
+class BankAccount {
+  final String ownerName;
+  double _balance;
+  final List<String> _history = [];
+
+  BankAccount({required this.ownerName, double initial = 0})
+      : _balance = initial;
+
+  double get balance => _balance;
+  List<String> get history => List.unmodifiable(_history);
+
+  // ให้คลาสลูกใช้ปรับยอดเงิน
+  void changeBalance(double amount) {
+    _balance += amount;
+  }
+
+  // ให้คลาสลูกใช้เพิ่มประวัติรายการ
+  void addHistory(String message) {
+    _history.add(message);
+  }
+
+  bool deposit(double amount) {
+    if (amount <= 0) {
+      print("❌ จำนวนเงินต้องมากกว่า 0");
+      return false;
+    }
+
+    changeBalance(amount);
+    addHistory(
+        "+ ฝาก ${amount.toStringAsFixed(2)} บาท (ยอดคงเหลือ: ${balance.toStringAsFixed(2)})");
+
+    print("✅ ฝาก ${amount.toStringAsFixed(2)} บาท สำเร็จ");
+    return true;
+  }
+
+  bool withdraw(double amount) {
+    if (amount <= 0) {
+      print("❌ จำนวนเงินต้องมากกว่า 0");
+      return false;
+    }
+
+    if (amount > balance) {
+      print("❌ ยอดเงินไม่เพียงพอ (มี ${balance.toStringAsFixed(2)} บาท)");
+      return false;
+    }
+
+    changeBalance(-amount);
+    addHistory(
+        "- ถอน ${amount.toStringAsFixed(2)} บาท (ยอดคงเหลือ: ${balance.toStringAsFixed(2)})");
+
+    print("✅ ถอน ${amount.toStringAsFixed(2)} บาท สำเร็จ");
+    return true;
+  }
+
+  void printStatement() {
+    print("\n=== สรุปบัญชี: $ownerName ===");
+    print("ยอดปัจจุบัน: ${balance.toStringAsFixed(2)} บาท");
+    print("ประวัติรายการ:");
+
+    if (history.isEmpty) {
+      print("  (ยังไม่มีรายการ)");
+    } else {
+      for (var h in history) {
+        print("  $h");
+      }
+    }
+  }
+
+  @override
+  String toString() =>
+      "BankAccount($ownerName, ยอด: ${balance.toStringAsFixed(2)})";
+}
+
+class CheckingAccount extends BankAccount {
+  final double overdraftLimit = 500.0;
+  final double overdraftFee = 50.0;
+
+  CheckingAccount({required String ownerName, double initial = 0})
+      : super(ownerName: ownerName, initial: initial);
+
+  @override
+  bool withdraw(double amount) {
+    if (amount <= 0) {
+      print("❌ จำนวนเงินต้องมากกว่า 0");
+      return false;
+    }
+
+    // ถอนปกติ
+    if (amount <= balance) {
+      return super.withdraw(amount);
+    }
+
+    // ถอนเกินบัญชี
+    double overdraftAmount = amount - balance;
+    double totalRequired = amount + overdraftFee;
+
+    if (overdraftAmount > overdraftLimit) {
+      print(
+          "❌ ถอนเกินบัญชีล้มเหลว: เกินวงเงิน Overdraft (${overdraftLimit.toStringAsFixed(2)} บาท)");
+      return false;
+    }
+
+    if (balance - totalRequired < -overdraftLimit) {
+      print(
+          "❌ ถอนเกินบัญชีล้มเหลว: รวมค่าธรรมเนียมแล้วเกินวงเงิน Overdraft (${overdraftLimit.toStringAsFixed(2)} บาท)");
+      return false;
+    }
+
+    changeBalance(-totalRequired);
+
+    addHistory(
+        "- ถอนเงินเกินบัญชี ${amount.toStringAsFixed(2)} บาท "
+        "(ค่าธรรมเนียม ${overdraftFee.toStringAsFixed(2)} บาท) "
+        "(ยอดคงเหลือ: ${balance.toStringAsFixed(2)})");
+
+    print(
+        "✅ ถอนเกินบัญชีสำเร็จ (หักค่าธรรมเนียม ${overdraftFee.toStringAsFixed(2)} บาท)");
+
+    return true;
+  }
+}
+
+// =================================================================
+// ส่วนที่ 2: Vehicle (Abstract Class)
+// =================================================================
+
+abstract class Vehicle {
+  double _fuelAmount = 0;
+
+  double get fuelAmount => _fuelAmount;
+  double get fuelEfficiency;
+
+  void refuel(double liters) {
+    if (liters <= 0) {
+      print("❌ กรุณาเติมน้ำมันมากกว่า 0 ลิตร");
+      return;
+    }
+
+    _fuelAmount += liters;
+
+    print(
+        "⛽ เติมน้ำมัน ${liters.toStringAsFixed(2)} ลิตร (คงเหลือ ${_fuelAmount.toStringAsFixed(2)} ลิตร)");
+  }
+
+  void drive(double km) {
+    if (km <= 0) {
+      print("❌ ระยะทางต้องมากกว่า 0");
+      return;
+    }
+
+    double fuelNeeded = km / fuelEfficiency;
+
+    if (fuelNeeded > _fuelAmount) {
+      print(
+          "❌ น้ำมันไม่พอ ต้องใช้ ${fuelNeeded.toStringAsFixed(2)} ลิตร แต่มี ${_fuelAmount.toStringAsFixed(2)} ลิตร");
+      return;
+    }
+
+    _fuelAmount -= fuelNeeded;
+
+    print(
+        "🚗 ขับรถ $km กม. ใช้น้ำมัน ${fuelNeeded.toStringAsFixed(2)} ลิตร เหลือ ${_fuelAmount.toStringAsFixed(2)} ลิตร");
+  }
+}
+
+class Car extends Vehicle {
+  @override
+  double get fuelEfficiency => 15.0;
+}
+
+class Truck extends Vehicle {
+  @override
+  double get fuelEfficiency => 6.0;
+}
+
+// =================================================================
+// ส่วนที่ 3: Mixin Discountable
+// =================================================================
+
+mixin Discountable {
+  double applyDiscount(double price, double percent) {
+    if (percent < 0 || percent > 100) {
+      print("❌ ส่วนลดต้องอยู่ระหว่าง 0 - 100%");
+      return price;
+    }
+
+    return price - (price * percent / 100);
+  }
+}
+
+class Product with Discountable {
+  String name;
+  double price;
+
+  Product({required this.name, required this.price});
+
+  void showPromoPrice(double percent) {
+    double finalPrice = applyDiscount(price, percent);
+
+    print(
+        "🏷️ $name | ราคา ${price.toStringAsFixed(2)} บาท | ลด ${percent.toStringAsFixed(2)}% | เหลือ ${finalPrice.toStringAsFixed(2)} บาท");
+  }
+}
+
+// =================================================================
+// Main
+// =================================================================
+
+void main() {
+  print("========== CheckingAccount ==========");
+
+  var account = CheckingAccount(ownerName: "สมบูรณ์", initial: 1000);
+
+  account.printStatement();
+
+  account.withdraw(800);
+  account.withdraw(300);
+  account.withdraw(400);
+
+  account.printStatement();
+
+  print("\n========== Vehicle ==========");
+
+  Car car = Car();
+  car.refuel(20);
+  car.drive(150);
+  car.drive(200);
+
+  print("");
+
+  Truck truck = Truck();
+  truck.refuel(30);
+  truck.drive(120);
+
+  print("\n========== Product ==========");
+
+  Product phone = Product(
+    name: "สมาร์ทโฟน",
+    price: 12000,
+  );
+
+  phone.showPromoPrice(15);
+}
 
 ```
 ---
