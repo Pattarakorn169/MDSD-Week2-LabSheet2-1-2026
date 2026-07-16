@@ -254,6 +254,8 @@ void main() {
 
 **ขั้นตอนที่ 7** กด Run และบันทึกผลลัพธ์ทั้งหมด
 
+<img width="1257" height="485" alt="image" src="https://github.com/user-attachments/assets/d83eb117-719b-4973-bb8e-842dcf455f17" />
+
 ---
 
 ### 🎯 โจทย์ฝึกทำ 1.1 — แก้ไขและเพิ่มเติมโค้ดด้วยตนเอง
